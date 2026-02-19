@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -9,17 +10,17 @@ import (
 	"time"
 
 	"github.com/Fi44er/cloud-store-api/internal/config"
+	"github.com/Fi44er/cloud-store-api/pkg/customerr"
 	"github.com/Fi44er/cloud-store-api/pkg/logger"
 	"github.com/Fi44er/cloud-store-api/pkg/postgres"
 	"github.com/Fi44er/cloud-store-api/pkg/postgres/uow"
 	"github.com/Fi44er/cloud-store-api/pkg/process_manager"
 	redisConnect "github.com/Fi44er/cloud-store-api/pkg/redis"
 	"github.com/Fi44er/cloud-store-api/pkg/session"
-	sessionstore "github.com/Fi44er/cloud-store-api/pkg/session/store"
 	"github.com/go-playground/validator/v10"
-	"github.com/swaggo/swag/example/basic/docs"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/swagger"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -41,8 +42,93 @@ type App struct {
 	processManager process_manager.IProcessManager
 	uow            uow.Uow
 
+	moduleProvider *moduleProvider
+
 	migrate   bool
 	redisMode int
+}
+
+func NewApp() *App {
+	migrate := flag.Bool("migrate", false, "Run database migration on startup (true/false)")
+	redisMode := flag.Int("redis", 0, "Redis cache mode: 0 - no flush, 1 - selective flush, 2 - full flush")
+	flag.Parse()
+
+	return &App{
+		app: fiber.New(fiber.Config{
+			ProxyHeader: fiber.HeaderXForwardedFor,
+		}),
+		migrate:   *migrate,
+		redisMode: *redisMode,
+	}
+}
+
+func (app *App) Run() error {
+	if err := app.initConfig(); err != nil {
+		return err
+	}
+	if err := app.initLogger(); err != nil {
+		return err
+	}
+
+	err := app.initDeps()
+	if err != nil {
+		return err
+	}
+
+	if err := app.registerBackgroundProcesses(); err != nil {
+		app.logger.Errorf("Failed to register background processes: %v", err)
+	}
+
+	app.processManager.StartAll()
+
+	return app.runHttpServerWithShutdown()
+}
+
+func (app *App) initModuleProvider() error {
+	err := error(nil)
+	app.moduleProvider, err = NewModuleProvider(app)
+	if err != nil {
+		app.logger.Errorf("%s", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (app *App) initDeps() error {
+	inits := []func() error{
+		app.initDb,
+		app.initRedis,
+		app.initValidator,
+		app.initProcessManager,
+		app.initModuleProvider,
+
+		app.initMiddlewares,
+		app.initRouter,
+	}
+	for _, init := range inits {
+		err := init()
+		if err != nil {
+			return fmt.Errorf("✖ Failed to initialize dependencies: %s", err.Error())
+		}
+	}
+	return nil
+}
+
+func (app *App) initMiddlewares() error {
+	origins := app.config.CORSOrigin
+	if origins == "" {
+		origins = "http://localhost:5173,http://localhost:8080"
+	}
+
+	app.app.Use(cors.New(cors.Config{
+		AllowOrigins:     origins,
+		AllowCredentials: true,
+	}))
+
+	app.app.Use(logger.LoggerMiddleware())
+	app.app.Use(customerr.ErrHandler)
+
+	return nil
 }
 
 func (app *App) initConfig() error {
@@ -113,20 +199,6 @@ func (app *App) initValidator() error {
 	return nil
 }
 
-func (app *App) initSessionManager() error {
-	if app.sessionManager == nil {
-		app.sessionManager = session.NewSessionManager(
-			sessionstore.NewRedisSessionStore(app.redisClient),
-			30*time.Minute,
-			2*time.Hour,
-			12*time.Hour,
-			"session",
-		)
-	}
-
-	return nil
-}
-
 func (app *App) runHttpServerWithShutdown() error {
 	if app.httpConfig == nil {
 		cfg, err := config.NewHTTPConfig()
@@ -190,10 +262,10 @@ func (app *App) registerBackgroundProcesses() error {
 }
 
 func (app *App) initRouter() error {
-	docs.SwaggerInfo.Host = app.config.ExternalHost
 	app.app.Get("/swagger/*", swagger.HandlerDefault)
 
-	// api := app.app.Group("/api")
+	api := app.app.Group("/api")
+	app.moduleProvider.authModule.InitDelivery(api)
 
 	return nil
 }

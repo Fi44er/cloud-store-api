@@ -20,7 +20,7 @@ var (
 	once     sync.Once
 )
 
-func NewLogger() *Logger {
+func NewLogger(loggerLevel ...logrus.Level) *Logger {
 	once.Do(func() {
 		log := logrus.New()
 

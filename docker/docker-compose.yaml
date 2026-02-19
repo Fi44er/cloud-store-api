@@ -1,0 +1,106 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15-alpine # Рекомендую версию 15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: kratos
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: kratos
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d # Сюда положи init.sql для создания app_db
+    ports:
+      - "5432:5432"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kratos"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # backend:
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/Dockerfile
+  #   container_name: backend
+  #   ports:
+  #     - "8080:8080"
+  #   env_file:
+  #     - ../.env
+  #   volumes:
+  #     - ./image:/app/image
+  #     - ../.env:/app/.env
+  #     - ./pkg/mailer/template:/app/template
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
+  #   networks:
+  #     - app_network
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: auth_mailpit
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    networks:
+      - app_network
+
+  kratos-migrate:
+    image: oryd/kratos:v1.1.0
+    container_name: auth_kratos_migrate
+    environment:
+      DSN: postgres://kratos:root@postgres:5432/kratos?sslmode=disable
+    volumes:
+      - ../kratos:/etc/config/kratos
+    command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: on-failure
+
+  kratos:
+    image: oryd/kratos:v1.1.0
+    container_name: auth_kratos
+    ports:
+      - "4433:4433" # Public API
+      - "4434:4434" # Admin API
+    environment:
+      DSN: postgres://kratos:root@postgres:5432/kratos?sslmode=disable
+      LOG_LEVEL: debug
+    volumes:
+      - ../kratos:/etc/config/kratos
+    command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+    depends_on:
+      kratos-migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+    networks:
+      - app_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  app_network:
+    driver: bridge

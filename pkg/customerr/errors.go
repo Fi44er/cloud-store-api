@@ -3,6 +3,8 @@ package customerr
 import (
 	"errors"
 	"fmt"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type Error struct {
@@ -59,4 +61,23 @@ func FromError(err error) (int, string) {
 		return customErr.Code, customErr.Message
 	}
 	return 500, "Internal Server Error"
+}
+
+func ErrHandler(ctx *fiber.Ctx) error {
+	err := ctx.Next()
+
+	if err != nil {
+		if error, ok := err.(*Error); ok {
+			return ctx.Status(error.Code).JSON(fiber.Map{
+				"status":  "failed",
+				"message": error.Message,
+			})
+		}
+		return ctx.Status(500).JSON(fiber.Map{
+			"status":  "failed",
+			"message": "internal server error",
+		})
+	}
+
+	return nil
 }

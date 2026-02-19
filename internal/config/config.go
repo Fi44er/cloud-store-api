@@ -9,9 +9,11 @@ import (
 )
 
 type Config struct {
-	NodeEnv string `mapstructure:"NODE_ENV"`
-	Port    int    `mapstructure:"PORT"`
-	AppURL  string `mapstructure:"APP_URL"`
+	NodeEnv  string `mapstructure:"NODE_ENV"`
+	Port     int    `mapstructure:"PORT"`
+	AppURL   string `mapstructure:"APP_URL"`
+	HTTPHost string `mapstructure:"HTTP_HOST"`
+	HTTPPort int    `mapstructure:"HTTP_PORT"`
 
 	DBHost      string `mapstructure:"DB_HOST"`
 	DBPort      int    `mapstructure:"DB_PORT"`
@@ -42,9 +44,11 @@ type Config struct {
 func validateConfig(config *Config) error {
 	configMap := map[string]any{
 		// App settings
-		"NODE_ENV": config.NodeEnv,
-		"PORT":     config.Port,
-		"APP_URL":  config.AppURL,
+		"NODE_ENV":  config.NodeEnv,
+		"PORT":      config.Port,
+		"APP_URL":   config.AppURL,
+		"HTTP_HOST": config.HTTPHost,
+		"HTTP_PORT": config.HTTPPort,
 
 		// PostgreSQL settings
 		"DB_HOST":      config.DBHost,
