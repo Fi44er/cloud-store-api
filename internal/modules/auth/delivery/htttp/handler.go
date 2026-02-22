@@ -72,12 +72,10 @@ func (h *AuthHandler) Verification(c *fiber.Ctx) error {
 		return err
 	}
 
-	// Проверяем состояние потока
-	// Если state == "passed_challenge", значит email подтвержден успешно
 	return c.Status(200).JSON(fiber.Map{
 		"success": true,
 		"status":  result.VerificationFlow.State,
-		"ui":      result.VerificationFlow.Ui, // здесь могут быть сообщения об успехе
+		"ui":      result.VerificationFlow.Ui,
 	})
 }
 
@@ -117,10 +115,48 @@ func (h *AuthHandler) Login(ctx *fiber.Ctx) error {
 	return ctx.Status(200).JSON(result)
 }
 
+func (h *AuthHandler) Logout(ctx *fiber.Ctx) error {
+	cookie := ctx.Cookies("ory_kratos_session")
+	res, err := h.authService.Logout(ctx.Context(), cookie)
+	if err != nil {
+		return err
+	}
+
+	ctx.Cookie(&fiber.Cookie{
+		Name:     "ory_kratos_session",
+		Value:    "",
+		MaxAge:   -1,
+		HTTPOnly: true,
+	})
+
+	return ctx.Status(200).JSON(res)
+}
+
 func (h *AuthHandler) WhoAmI(c *fiber.Ctx) error {
 	session := c.Locals("session") // Предполагается, что middleware положило сюда сессию
 	if session == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
 	}
 	return c.JSON(session)
+}
+
+func (h *AuthHandler) RevokeSession(ctx *fiber.Ctx) error {
+	cookie := ctx.Cookies("ory_kratos_session")
+	sessionID := ctx.Params("session_id")
+	err := h.authService.RevokeSession(ctx.Context(), cookie, sessionID)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Status(200).JSON(fiber.Map{"success": true})
+}
+
+func (h *AuthHandler) GetSessions(ctx *fiber.Ctx) error {
+	identityID := ctx.Locals("identity_id").(string)
+	sessions, err := h.authService.GetSessions(ctx.Context(), identityID)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Status(200).JSON(sessions)
 }

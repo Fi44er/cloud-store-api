@@ -15,8 +15,14 @@ func (h *AuthHandler) RegisterRoutes(router fiber.Router) {
 	auth.Get("/login/flow", h.InitLogin)
 	auth.Post("/login", h.Login)
 
+	auth.Post("/logout", h.Logout)
+
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	protected := router.Group("/auth", authMiddleware.RequireAuth)
 	protected.Get("/whoami", h.WhoAmI)
+
+	session := protected.Group("/session")
+	session.Get("/", h.GetSessions)
+	session.Post("revoke/:session_id", h.RevokeSession)
 }

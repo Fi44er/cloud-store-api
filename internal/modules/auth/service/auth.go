@@ -208,3 +208,60 @@ func (s *AuthService) Login(ctx context.Context, dto *auth_dto.LoginRequest) (*a
 
 	return res, sessionToken, nil
 }
+
+func (s *AuthService) Logout(ctx context.Context, cookie string) (*auth_dto.LogoutResponse, error) {
+	if cookie != "" {
+		resp, err := s.kratosPublic.FrontendAPI.PerformNativeLogout(ctx).
+			PerformNativeLogoutBody(kratos.PerformNativeLogoutBody{SessionToken: cookie}).
+			Execute()
+		if err != nil {
+			status := 500
+			if resp != nil {
+				status = resp.StatusCode
+			}
+
+			errs := auth_utils.ExtractKratosErrors(err)
+
+			resWithErrors := &auth_dto.LogoutResponse{
+				Success: false,
+				Errors:  errs,
+			}
+			return resWithErrors, customerr.NewError(status, "logout_failed")
+		}
+	}
+
+	res := &auth_dto.LogoutResponse{
+		Success: true,
+	}
+
+	return res, nil
+}
+
+func (s *AuthService) GetSessions(ctx context.Context, identityID string) ([]kratos.Session, error) {
+	if identityID == "" {
+		return nil, customerr.NewError(401, "no session")
+	}
+
+	sessions, _, err := s.kratosAdmin.IdentityAPI.ListIdentitySessions(context.Background(), identityID).Execute()
+	if err != nil {
+		return nil, err
+	}
+
+	return sessions, nil
+}
+
+func (s *AuthService) RevokeSession(ctx context.Context, cookie string, sessionID string) error {
+	if cookie == "" {
+		return customerr.NewError(401, "no session")
+	}
+
+	_, err := s.kratosPublic.FrontendAPI.DisableMySession(ctx, sessionID).
+		Cookie("ory_kratos_session=" + cookie).
+		Execute()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

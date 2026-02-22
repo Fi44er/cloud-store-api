@@ -22,3 +22,8 @@ type LoginResponse struct {
 	Success bool              `json:"success"`
 	Errors  map[string]string `json:"errors,omitempty"`
 }
+
+type LogoutResponse struct {
+	Success bool              `json:"success"`
+	Errors  map[string]string `json:"errors,omitempty"`
+}

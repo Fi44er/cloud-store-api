@@ -27,12 +27,6 @@ type Config struct {
 	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
 	RedisURL      string `mapstructure:"REDIS_URL"`
 
-	SessionSecret           string `mapstructure:"SESSION_SECRET"`
-	SessionName             string `mapstructure:"SESSION_NAME"`
-	SessionMaxAge           int    `mapstructure:"SESSION_MAX_AGE"`
-	SessionRefreshThreshold int    `mapstructure:"SESSION_REFRESH_THRESHOLD"`
-	SessionRolling          bool   `mapstructure:"SESSION_ROLLING"`
-
 	CookieSecure   bool   `mapstructure:"COOKIE_SECURE"`
 	CookieHTTPOnly bool   `mapstructure:"COOKIE_HTTP_ONLY"`
 	CookieSameSite string `mapstructure:"COOKIE_SAME_SITE"`
@@ -62,13 +56,6 @@ func validateConfig(config *Config) error {
 		"REDIS_HOST": config.RedisHost,
 		"REDIS_PORT": config.RedisPort,
 		"REDIS_URL":  config.RedisURL,
-
-		// Session & Auth settings
-		"SESSION_SECRET":            config.SessionSecret,
-		"SESSION_NAME":              config.SessionName,
-		"SESSION_MAX_AGE":           config.SessionMaxAge,
-		"SESSION_REFRESH_THRESHOLD": config.SessionRefreshThreshold,
-		"SESSION_ROLLING":           config.SessionRolling,
 
 		// Cookie security
 		"COOKIE_SECURE":    config.CookieSecure,
