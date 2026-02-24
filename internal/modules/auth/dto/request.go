@@ -12,6 +12,11 @@ type VerificationRequest struct {
 	Code   string `json:"code"`
 }
 
+type VerificationSendCodeRequest struct {
+	FlowID string `json:"flow_id"`
+	Email  string `json:"email"`
+}
+
 type LoginRequest struct {
 	FlowID     string `json:"flow_id"`
 	Identifier string `json:"identifier"`

@@ -3,6 +3,7 @@ package middleware
 import (
 	"strings"
 
+	auth_constant "github.com/Fi44er/cloud-store-api/internal/modules/auth/pkg/constant"
 	"github.com/gofiber/fiber/v2"
 	kratos "github.com/ory/kratos-client-go"
 )
@@ -26,7 +27,7 @@ func NewAuthMiddleware() *AuthMiddleware {
 
 func (m *AuthMiddleware) extractToken(c *fiber.Ctx) string {
 	// 1. Пытаемся взять из куки
-	token := c.Cookies("ory_kratos_session")
+	token := c.Cookies(auth_constant.CratosSessionKey)
 	if token != "" {
 		return token
 	}
@@ -73,8 +74,8 @@ func (m *AuthMiddleware) RequireAuth(c *fiber.Ctx) error {
 		})
 	}
 
-	c.Locals("session", session)
-	c.Locals("identity_id", session.Identity.Id)
+	c.Locals(auth_constant.SessionCtxKey, session)
+	c.Locals(auth_constant.IdentityIdCtxKey, session.Identity.Id)
 
 	return c.Next()
 }
@@ -87,8 +88,8 @@ func (m *AuthMiddleware) OptionalAuth(c *fiber.Ctx) error {
 
 	session, err := m.validateSession(c, token)
 	if err == nil && session != nil {
-		c.Locals("session", session)
-		c.Locals("identity_id", session.Identity.Id)
+		c.Locals(auth_constant.SessionCtxKey, session)
+		c.Locals(auth_constant.IdentityIdCtxKey, session.Identity.Id)
 	}
 
 	return c.Next()
