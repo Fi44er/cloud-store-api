@@ -99,7 +99,7 @@ func (s *AuthService) Registration(ctx context.Context, dto *auth_dto.Registrati
 		},
 	}
 
-	result, resp, err := s.kratosPublic.FrontendAPI.UpdateRegistrationFlow(context.Background()).
+	result, resp, err := s.kratosPublic.FrontendAPI.UpdateRegistrationFlow(ctx).
 		Flow(dto.FlowID).
 		UpdateRegistrationFlowBody(body).
 		Execute()
@@ -294,6 +294,7 @@ func (s *AuthService) Login(ctx context.Context, dto *auth_dto.LoginRequest, use
 
 	isVerified := false
 	if len(result.Session.Identity.VerifiableAddresses) > 0 {
+		s.logger.Debugf("T: %+v", result.Session.Identity.VerifiableAddresses)
 		for _, addr := range result.Session.Identity.VerifiableAddresses {
 			if addr.Verified {
 				isVerified = true
@@ -327,6 +328,33 @@ func (s *AuthService) Login(ctx context.Context, dto *auth_dto.LoginRequest, use
 		return nil, "", customerr.NewError(403, "please verify your email. link: http://localhost:8080/api/auth/verification/resend")
 	}
 
+	currentSessionID := result.Session.Id
+	identityID := result.Session.Identity.Id
+
+	sessions, _, err := s.kratosAdmin.IdentityAPI.ListIdentitySessions(ctx, identityID).Execute()
+	if err == nil {
+		for _, sess := range sessions {
+			if sess.Id == currentSessionID || sess.Active == nil || !*sess.Active {
+				continue
+			}
+
+			if len(sess.Devices) > 0 {
+				oldDevice := sess.Devices[0]
+
+				if oldDevice.IpAddress != nil && *oldDevice.IpAddress == ip &&
+					oldDevice.UserAgent != nil && *oldDevice.UserAgent == userAgent {
+
+					_, err := s.kratosAdmin.IdentityAPI.DisableSession(ctx, sess.Id).Execute()
+					if err != nil {
+						s.logger.Errorf("Failed to revoke duplicate device session %s: %v", sess.Id, err)
+					} else {
+						s.logger.Infof("Revoked old session %s for the same device (IP: %s)", sess.Id, ip)
+					}
+				}
+			}
+		}
+	}
+
 	var sessionToken string
 	if result.SessionToken != nil {
 		sessionToken = *result.SessionToken
@@ -347,7 +375,6 @@ func (s *AuthService) Login(ctx context.Context, dto *auth_dto.LoginRequest, use
 	}
 
 	locationRes := fmt.Sprintf("%s, %s", location.Country.Names["ru"], location.City.Names["ru"])
-	identityID := result.Session.Identity.Id
 
 	patch := kratos.JsonPatch{
 		Op:    "add",

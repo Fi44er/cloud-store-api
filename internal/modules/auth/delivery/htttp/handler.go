@@ -209,6 +209,7 @@ func (h *AuthHandler) Login(ctx *fiber.Ctx) error {
 		return err
 	}
 
+	h.logger.Debugf("token: %s %s", token, auth_constant.CratosSessionKey)
 	if token != "" {
 		ctx.Cookie(&fiber.Cookie{
 			Name:     auth_constant.CratosSessionKey,
