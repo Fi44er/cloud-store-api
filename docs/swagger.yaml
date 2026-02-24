@@ -1,9 +1,0 @@
-basePath: /api/
-host: 127.0.0.1:8080
-info:
-  contact: {}
-  description: Swagger docs from sdmedik backend
-  title: sdmedik API
-  version: "1.0"
-paths: {}
-swagger: "2.0"

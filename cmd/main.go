@@ -6,9 +6,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// @title				sdmedik API
+// @title				cloude store API
 // @version		1.0
-// @description	Swagger docs from sdmedik backend
+// @description	Swagger docs from cloud-store-api backend
 // @host			127.0.0.1:8080
 // @BasePath		/api/
 func main() {
