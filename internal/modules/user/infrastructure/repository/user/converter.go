@@ -18,30 +18,30 @@ func NewConverter(logger *logger.Logger) *Converter {
 
 func (c *Converter) ToModel(user *user_entity.User) *user_model.User {
 	return &user_model.User{
-		ID:           user.ID,
-		Username:     user.Username,
-		Email:        user.Email,
-		PasswordHash: user.PasswordHash,
-		AvatarPath:   user.AvatarPath,
-		BannerPath:   user.BannerPath,
+		ID:         user.ID,
+		Username:   user.Username,
+		Email:      user.Email,
+		QuotaMax:   user.QuotaMax,
+		AvatarPath: user.AvatarPath,
+		BannerPath: user.BannerPath,
 	}
 }
 
 func (c *Converter) ToEntity(user *user_model.User) *user_entity.User {
 	return &user_entity.User{
-		ID:           user.ID,
-		Username:     user.Username,
-		Email:        user.Email,
-		PasswordHash: user.PasswordHash,
-		AvatarPath:   user.AvatarPath,
-		BannerPath:   user.BannerPath,
+		ID:         user.ID,
+		Username:   user.Username,
+		Email:      user.Email,
+		QuotaMax:   user.QuotaMax,
+		AvatarPath: user.AvatarPath,
+		BannerPath: user.BannerPath,
 	}
 }
 
-func (c *Converter) ToEntities(users []user_model.User) []*user_entity.User {
-	var entities []*user_entity.User
+func (c *Converter) ToEntities(users []user_model.User) []user_entity.User {
+	var entities []user_entity.User
 	for _, user := range users {
-		entities = append(entities, c.ToEntity(&user))
+		entities = append(entities, *c.ToEntity(&user))
 	}
 	return entities
 }

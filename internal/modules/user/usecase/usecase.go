@@ -13,7 +13,7 @@ type IUserUsecase interface {
 	GetByID(ctx context.Context, id string) (*user_entity.User, error)
 	GetByEmail(ctx context.Context, email string) (*user_entity.User, error)
 	GetByUsername(ctx context.Context, username string) (*user_entity.User, error)
-	GetAll(ctx context.Context, offset, limit int) ([]*user_entity.User, error)
+	GetAll(ctx context.Context, offset, limit int) ([]user_entity.User, error)
 	Delete(ctx context.Context, id string) error
 	Update(ctx context.Context, user *user_entity.User) error
 }
@@ -70,7 +70,7 @@ func (u *UserUsecase) GetByEmail(ctx context.Context, email string) (*user_entit
 	return u.repo.GetByEmail(ctx, email)
 }
 
-func (u *UserUsecase) GetAll(ctx context.Context, offset, limit int) ([]*user_entity.User, error) {
+func (u *UserUsecase) GetAll(ctx context.Context, offset, limit int) ([]user_entity.User, error) {
 	u.logger.Infof("Getting all users with offset: %d and limit: %d", offset, limit)
 	return u.repo.GetAll(ctx, offset, limit)
 }

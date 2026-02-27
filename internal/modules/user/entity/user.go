@@ -8,12 +8,13 @@ import (
 )
 
 type User struct {
-	ID           string
-	Username     string
-	Email        string
-	PasswordHash string
-	AvatarPath   string
-	BannerPath   string
+	ID       string // identity id
+	Username string
+	Email    string
+
+	QuotaMax   int64
+	AvatarPath string
+	BannerPath string
 }
 
 func (u *User) Validate() error {

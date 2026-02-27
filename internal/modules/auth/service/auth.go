@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	auth_dto "github.com/Fi44er/cloud-store-api/internal/modules/auth/dto"
+	auth_entity "github.com/Fi44er/cloud-store-api/internal/modules/auth/entity"
+	auth_adapters "github.com/Fi44er/cloud-store-api/internal/modules/auth/infrastructure/adapters"
 	auth_constant "github.com/Fi44er/cloud-store-api/internal/modules/auth/pkg/constant"
 	auth_utils "github.com/Fi44er/cloud-store-api/internal/modules/auth/pkg/util"
 	"github.com/Fi44er/cloud-store-api/pkg/customerr"
@@ -42,7 +44,8 @@ const (
 )
 
 type AuthService struct {
-	logger *logger.Logger
+	logger             *logger.Logger
+	userUsecaseAdapter *auth_adapters.UserUsecaseAdapter
 
 	kratosPublic *kratos.APIClient
 	kratosAdmin  *kratos.APIClient
@@ -117,7 +120,19 @@ func (s *AuthService) Registration(ctx context.Context, dto *auth_dto.Registrati
 		}
 
 		s.logger.Errorf("failed to register user: %v", err)
+		// TODO: вынести ошибку в константы
 		return resWithErrors, "", customerr.NewError(status, "validation_failed")
+	}
+
+	user := auth_entity.User{
+		ID:       result.Identity.Id,
+		Email:    dto.Email,
+		Username: dto.Username,
+	}
+
+	if err := s.userUsecaseAdapter.Create(ctx, &user); err != nil {
+		s.logger.Errorf("Failed to create local user profile: %v", err)
+		return nil, "", customerr.NewError(500, "failed to create profile")
 	}
 
 	var sessionToken string

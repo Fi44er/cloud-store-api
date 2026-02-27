@@ -266,6 +266,6 @@ func (app *App) initRouter() error {
 
 	api := app.app.Group("/api")
 	app.moduleProvider.authModule.InitDelivery(api)
-
+	app.moduleProvider.fileModule.RegisterRoutes(api)
 	return nil
 }

@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	file_model "github.com/Fi44er/cloud-store-api/internal/modules/files/infrastructure/repository/model"
 	"github.com/Fi44er/cloud-store-api/pkg/logger"
 	"gorm.io/gorm"
 )
@@ -9,7 +10,9 @@ func Migrate(db *gorm.DB, trigger bool, log *logger.Logger) error {
 
 	if trigger {
 		log.Info("📦 Migrating database...")
-		models := []any{}
+		models := []any{
+			&file_model.Node{},
+		}
 
 		log.Info("📦 Creating types...")
 

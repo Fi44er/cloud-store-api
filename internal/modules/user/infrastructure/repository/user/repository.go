@@ -16,7 +16,7 @@ type IUserRepository interface {
 	GetByID(ctx context.Context, id string) (*user_entity.User, error)
 	GetByEmail(ctx context.Context, email string) (*user_entity.User, error)
 	GetByUsername(ctx context.Context, username string) (*user_entity.User, error)
-	GetAll(ctx context.Context, offset, limit int) ([]*user_entity.User, error)
+	GetAll(ctx context.Context, offset, limit int) ([]user_entity.User, error)
 }
 
 type UserRepository struct {
@@ -120,7 +120,7 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*u
 	return user, nil
 }
 
-func (r *UserRepository) GetAll(ctx context.Context, offset, limit int) ([]*user_entity.User, error) {
+func (r *UserRepository) GetAll(ctx context.Context, offset, limit int) ([]user_entity.User, error) {
 	r.logger.Infof("Getting all users with offset %d and limit %d", offset, limit)
 	var userModels []user_model.User
 	if limit == 0 {

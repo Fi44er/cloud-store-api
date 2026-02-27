@@ -13,5 +13,5 @@ type IUserRepository interface {
 	GetByID(ctx context.Context, id string) (*user_entity.User, error)
 	GetByEmail(ctx context.Context, email string) (*user_entity.User, error)
 	GetByUsername(ctx context.Context, username string) (*user_entity.User, error)
-	GetAll(ctx context.Context, offset, limit int) ([]*user_entity.User, error)
+	GetAll(ctx context.Context, offset, limit int) ([]user_entity.User, error)
 }
