@@ -10,7 +10,7 @@ import (
 // @version		1.0
 // @description	Swagger docs from cloud-store-api backend
 // @host			127.0.0.1:8080
-// @BasePath		/api/
+// @BasePath		/api/v1/
 func main() {
 	a := app.NewApp()
 	err := a.Run()

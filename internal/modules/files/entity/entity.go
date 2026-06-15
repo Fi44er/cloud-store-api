@@ -10,12 +10,14 @@ type Node struct {
 	UpdatedAt time.Time
 	DeletedAt time.Time
 
-	Name     string
-	IsDir    bool
-	MimeType string
-	Size     int64
-
-	StoragePath string
+	Name         string
+	IsDir        bool
+	MimeType     string
+	Size         int64
+	Extension    string
+	StorageName  string
+	StoragePath  string
+	IsFavorite   bool
 
 	UserID string
 

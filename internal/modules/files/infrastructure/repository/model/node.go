@@ -12,14 +12,14 @@ type Node struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"` // Мягкое удаление (корзина)
 
-	Name     string `gorm:"not null" json:"name"`   // Имя файла: "отпуск.jpg"
-	IsDir    bool   `gorm:"not null" json:"is_dir"` // true = папка, false = файл
-	MimeType string `json:"mime_type"`              // image/jpeg, application/pdf
-	Size     int64  `json:"size"`                   // Размер в байтах
-
-	// Физический путь на диске (только для файлов).
-	// Например: "uploads/2023/05/a1-b2-c3..."
-	StoragePath string `json:"-"`
+	Name         string `gorm:"not null" json:"name"`   // Имя файла: "отпуск.jpg"
+	IsDir        bool   `gorm:"not null" json:"is_dir"` // true = папка, false = файл
+	MimeType     string `json:"mime_type"`              // image/jpeg, application/pdf
+	Size         int64  `json:"size"`                   // Размер в байтах
+	Extension    string `json:"extension"`
+	StorageName  string `json:"storage_name"`
+	StoragePath  string `json:"-"`
+	IsFavorite   bool   `gorm:"default:false" json:"is_favorite"`
 
 	// Владелец
 	UserID string `gorm:"type:uuid;index" json:"user_id"`

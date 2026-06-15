@@ -3,6 +3,7 @@ package app
 import (
 	auth_module "github.com/Fi44er/cloud-store-api/internal/modules/auth"
 	file_module "github.com/Fi44er/cloud-store-api/internal/modules/files"
+	user_module "github.com/Fi44er/cloud-store-api/internal/modules/user"
 )
 
 type moduleProvider struct {
@@ -10,6 +11,7 @@ type moduleProvider struct {
 
 	authModule *auth_module.AuthModule
 	fileModule *file_module.FileModule
+	userModule *user_module.UserModule
 }
 
 func NewModuleProvider(app *App) (*moduleProvider, error) {
@@ -26,6 +28,7 @@ func NewModuleProvider(app *App) (*moduleProvider, error) {
 
 func (p *moduleProvider) initDeps() error {
 	inits := []func() error{
+		p.UserModule,
 		p.AuthModule,
 		p.FileModule,
 	}
@@ -43,7 +46,18 @@ func (p *moduleProvider) AuthModule() error {
 	p.authModule = auth_module.NewAuthModule(
 		p.app.logger,
 	)
+	p.authModule.SetUserUseCase(p.userModule.GetUserUseCase())
 	p.authModule.Init()
+	return nil
+}
+
+func (p *moduleProvider) UserModule() error {
+	p.userModule = user_module.NewUserModule(
+		p.app.logger,
+		p.app.validator,
+		p.app.db,
+	)
+	p.userModule.Init()
 	return nil
 }
 

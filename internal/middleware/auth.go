@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"os"
 	"strings"
 
 	auth_constant "github.com/Fi44er/cloud-store-api/internal/modules/auth/pkg/constant"
@@ -13,10 +14,15 @@ type AuthMiddleware struct {
 }
 
 func NewAuthMiddleware() *AuthMiddleware {
+	kratosPublicURL := "http://kratos:4433"
+	if url := os.Getenv("KRATOS_PUBLIC_URL"); url != "" {
+		kratosPublicURL = url
+	}
+
 	configuration := kratos.NewConfiguration()
 	configuration.Servers = []kratos.ServerConfiguration{
 		{
-			URL: "http://localhost:4433",
+			URL: kratosPublicURL,
 		},
 	}
 

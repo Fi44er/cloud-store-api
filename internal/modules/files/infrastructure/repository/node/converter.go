@@ -14,24 +14,34 @@ func newConverter() *converter {
 
 func (c *converter) toModel(node *file_entity.Node) *file_model.Node {
 	return &file_model.Node{
-		ID:       node.ID,
-		Name:     node.Name,
-		IsDir:    node.IsDir,
-		MimeType: node.MimeType,
-		Size:     node.Size,
-		UserID:   node.UserID,
-		ParentID: node.ParentID,
+		ID:          node.ID,
+		Name:        node.Name,
+		IsDir:       node.IsDir,
+		MimeType:    node.MimeType,
+		Size:        node.Size,
+		Extension:   node.Extension,
+		StorageName: node.StorageName,
+		StoragePath: node.StoragePath,
+		IsFavorite:  node.IsFavorite,
+		UserID:      node.UserID,
+		ParentID:    node.ParentID,
 	}
 }
 
 func (c *converter) toEntity(node *file_model.Node) *file_entity.Node {
 	return &file_entity.Node{
-		ID:       node.ID,
-		Name:     node.Name,
-		IsDir:    node.IsDir,
-		MimeType: node.MimeType,
-		Size:     node.Size,
-		UserID:   node.UserID,
-		ParentID: node.ParentID,
+		ID:          node.ID,
+		CreatedAt:   node.CreatedAt,
+		UpdatedAt:   node.UpdatedAt,
+		Name:        node.Name,
+		IsDir:       node.IsDir,
+		MimeType:    node.MimeType,
+		Size:        node.Size,
+		Extension:   node.Extension,
+		StorageName: node.StorageName,
+		StoragePath: node.StoragePath,
+		IsFavorite:  node.IsFavorite,
+		UserID:      node.UserID,
+		ParentID:    node.ParentID,
 	}
 }

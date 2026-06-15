@@ -1,0 +1,79 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gloude_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gloude}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gloude_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-gloude_store}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-gloude} -d ${POSTGRES_DB:-gloude_store}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gloude_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://gloude:gloude_secret@postgres:5432/gloude_store?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_change_in_production}
+      SESSION_SECRET: ${SESSION_SECRET:-super_secret_session_key}
+      UPLOAD_DIR: /app/uploads
+      MAX_QUOTA_BYTES: ${MAX_QUOTA_BYTES:-1073741824}
+      PORT: 8080
+      ENV: ${ENV:-production}
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api/v1}
+    container_name: gloude_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:alpine
+    container_name: gloude_nginx
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  postgres_data:
+  uploads_data:

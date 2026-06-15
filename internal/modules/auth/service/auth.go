@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	auth_dto "github.com/Fi44er/cloud-store-api/internal/modules/auth/dto"
 	auth_entity "github.com/Fi44er/cloud-store-api/internal/modules/auth/entity"
@@ -38,9 +39,10 @@ func (t *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.Transport.RoundTrip(req)
 }
 
-const (
-	KratosPublicURL = "http://localhost:4433"
-	KratosAdminURL  = "http://localhost:4434"
+// Kratos URLs will be loaded from env vars or use defaults
+var (
+	KratosPublicURL = "http://kratos:4433"
+	KratosAdminURL  = "http://kratos:4434"
 )
 
 type AuthService struct {
@@ -51,7 +53,15 @@ type AuthService struct {
 	kratosAdmin  *kratos.APIClient
 }
 
-func NewAuthService(logger *logger.Logger) *AuthService {
+func NewAuthService(logger *logger.Logger, userUsecaseAdapter *auth_adapters.UserUsecaseAdapter) *AuthService {
+	// Load Kratos URLs from environment variables
+	if url := os.Getenv("KRATOS_PUBLIC_URL"); url != "" {
+		KratosPublicURL = url
+	}
+	if url := os.Getenv("KRATOS_ADMIN_URL"); url != "" {
+		KratosAdminURL = url
+	}
+
 	httpClient := &http.Client{
 		Transport: &headerTransport{
 			Transport: http.DefaultTransport,
@@ -67,9 +77,10 @@ func NewAuthService(logger *logger.Logger) *AuthService {
 	adminConfig.HTTPClient = httpClient
 
 	return &AuthService{
-		logger:       logger,
-		kratosPublic: kratos.NewAPIClient(publicConfig),
-		kratosAdmin:  kratos.NewAPIClient(adminConfig),
+		logger:             logger,
+		userUsecaseAdapter: userUsecaseAdapter,
+		kratosPublic:       kratos.NewAPIClient(publicConfig),
+		kratosAdmin:        kratos.NewAPIClient(adminConfig),
 	}
 }
 
@@ -79,7 +90,11 @@ func (s *AuthService) InitRegistration(ctx context.Context) (string, error) {
 
 	if err != nil {
 		s.logger.Errorf("failed to init registration: %v", err)
-		return "", customerr.NewError(resp.StatusCode, err.Error())
+		status := 500
+		if resp != nil {
+			status = resp.StatusCode
+		}
+		return "", customerr.NewError(status, err.Error())
 	}
 
 	return flow.Id, nil
@@ -263,7 +278,11 @@ func (s *AuthService) InitLogin(ctx context.Context) (string, error) {
 
 	if err != nil {
 		s.logger.Errorf("failed to create login flow: %v", err)
-		return "", customerr.NewError(resp.StatusCode, err.Error())
+		status := 500
+		if resp != nil {
+			status = resp.StatusCode
+		}
+		return "", customerr.NewError(status, err.Error())
 	}
 
 	return flow.Id, nil

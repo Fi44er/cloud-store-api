@@ -264,7 +264,7 @@ func (app *App) registerBackgroundProcesses() error {
 func (app *App) initRouter() error {
 	app.app.Get("/swagger/*", swagger.HandlerDefault)
 
-	api := app.app.Group("/api")
+	api := app.app.Group("/api/v1")
 	app.moduleProvider.authModule.InitDelivery(api)
 	app.moduleProvider.fileModule.RegisterRoutes(api)
 	return nil
